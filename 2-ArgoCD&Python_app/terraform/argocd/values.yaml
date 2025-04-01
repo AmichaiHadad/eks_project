@@ -1,0 +1,234 @@
+## Argo CD Helm chart values
+global:
+  image:
+    tag: v2.9.3
+  securityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+
+# Server configurations
+server:
+  extraArgs:
+    - --insecure # Disable strict TLS verification (remove in production)
+  
+  # Use affinity instead of strict nodeSelector
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  # Add multiple tolerations for flexibility
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  # Use the custom admin password secret
+  admin:
+    enabled: true
+    passwordSecret:
+      name: ${admin_password_secret_name}
+      key: password
+    createSecret: false
+
+  # Reduce resource requirements
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+  # RBAC configuration
+  rbacConfig:
+    policy.csv: |
+      g, admin, role:admin
+      g, reader, role:readonly
+      g, deployer, role:deployer
+    policy.default: role:readonly
+    scopes: "[groups, preferred_username]"
+
+# Repository server configuration
+repoServer:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
+# Application controller configuration
+controller:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  resources:
+    limits:
+      cpu: 300m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Redis configuration
+redis:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Application set controller configuration
+applicationSet:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+  
+  # Reduce resource requirements to prevent timeout issues
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Dex server configuration
+dex:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+  
+  # Reduce resource requirements
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Initial repository configuration
+configs:
+  repositories:
+    # Add your Git repositories here
+    my-private-repo:
+      url: https://github.com/example/private-repo.git
+      type: git
+
+# Resource customizations
+resourceCustomizations:
+  health.lua: |
+    health_status = {}
+    if obj.status ~= nil then
+      if obj.status.conditions ~= nil then
+        for i, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Ready" and condition.status == "True" then
+            health_status.status = "Healthy"
+            health_status.message = condition.message
+            return health_status
+          end
+        end
+      end
+    end
+    health_status.status = "Progressing"
+    health_status.message = "Waiting for resource to become Ready"
+    return health_status
