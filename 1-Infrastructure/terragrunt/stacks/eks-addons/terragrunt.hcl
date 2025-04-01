@@ -34,6 +34,26 @@ terraform {
   source = "../../../modules/eks-addons"
 }
 
+# Add hook to wait a bit after creating node groups
+# This helps ensure the nodes are properly registered and CNI will initialize
+generate "wait_for_nodes" {
+  path      = "wait_for_nodes.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+resource "null_resource" "wait_for_nodes" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for nodes to be ready before deploying addons..."
+      sleep 60
+    EOT
+    interpreter = [
+      "bash", "-c"
+    ]
+  }
+}
+EOF
+}
+
 inputs = {
   # EKS Cluster Configuration
   cluster_name    = dependency.eks.outputs.cluster_name

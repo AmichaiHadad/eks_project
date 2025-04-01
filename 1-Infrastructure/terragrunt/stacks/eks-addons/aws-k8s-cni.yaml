@@ -301,6 +301,9 @@ metadata:
     app.kubernetes.io/instance: aws-vpc-cni
     k8s-app: aws-node
     app.kubernetes.io/version: "v1.19.0"
+  # Add annotation for IRSA
+  annotations:
+    eks.amazonaws.com/role-arn: "${aws_iam_role.vpc_cni_role.arn}"
 ---
 # Source: aws-vpc-cni/templates/configmap.yaml
 apiVersion: v1
@@ -318,7 +321,7 @@ data:
   enable-network-policy-controller: "false"
   enable-windows-prefix-delegation: "false"
   warm-prefix-target: "0"
-  warm-ip-target: "1"
+  warm-ip-target: "5"
   minimum-ip-target: "3"
   branch-eni-cooldown: "60"
 ---
@@ -435,6 +438,7 @@ spec:
             name: cni-bin-dir
       terminationGracePeriodSeconds: 10
       tolerations:
+        # Tolerate all nodes
         - operator: Exists
       securityContext:
         {}

@@ -59,8 +59,50 @@ scripts/
 # Ignore environment-specific files
 .env
 .envrc
+**/.env*
+**/*.env
+
+# Sensitive data files
+**/credentials.json
+**/*credentials*
+**/*credential*
+**/*secret*
+**/*api-key*
+**/aws-credentials
+**/kubeconfig
+**/.kube/
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
+**/*.keystore
+**/trust-policy.json
+**/vpc-cni-config.json
+**/vpc-cni-trust-policy.json
+
+# Generated service account credentials
+**/*service-account*.json
+
+# Prevent accidentally committing passwords or tokens
+**/password*.txt
+**/token*.txt
+**/*password*
+**/*token*
+**/argocd-credentials.txt
+
+# Kubernetes secret manifests
+**/secrets.yaml
+**/secret.yaml
+**/secret-*.yaml
+**/secrets-*.yaml
 
 # Include utility-scripts directory
 !utility-scripts/
 !utility-scripts/*.sh
-!utility-scripts/*.ps1 
+!utility-scripts/*.ps1
+
+# Exclude backup files
+**/backup*
+**/*.bak
+**/*.backup 

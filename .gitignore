@@ -1,0 +1,125 @@
+# Root .gitignore - covers entire project
+
+# Terraform and Terragrunt files
+**/.terraform/*
+**/.terragrunt-cache/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+terraform.rc
+.terraformrc
+backend.tf
+providers.tf
+.terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Sensitive data and credentials
+**/.env*
+**/*.env
+**/credentials.json
+**/*credentials*
+**/*credential*
+**/*secret*
+**/*api-key*
+**/argocd-credentials.txt
+**/*password*
+**/*token*
+**/kubeconfig
+**/.kube/
+**/aws-credentials
+**/trust-policy.json
+**/vpc-cni-config.json
+**/vpc-cni-trust-policy.json
+
+# Generated JWT tokens or session data
+**/*.jwt
+**/*.session
+
+# Kubernetes secret manifests
+**/secrets.yaml
+**/secret.yaml
+**/secret-*.yaml
+**/secrets-*.yaml
+**/values-secrets.yaml
+
+# SSL/TLS certificates and keys
+**/*.pem
+**/*.key
+**/*.crt
+**/*.cer
+**/*.der
+**/*.p12
+**/*.pfx
+**/*.jks
+**/*.keystore
+**/*.csr
+
+# Service account credentials
+**/*service-account*.json
+
+# Python specific
+**/__pycache__/
+**/*.py[cod]
+**/*$py.class
+**/*.so
+**/.Python
+**/build/
+**/develop-eggs/
+**/dist/
+**/downloads/
+**/eggs/
+**/.eggs/
+**/lib/
+**/lib64/
+**/parts/
+**/sdist/
+**/var/
+**/wheels/
+**/*.egg-info/
+**/.installed.cfg
+**/*.egg
+**/venv/
+**/env/
+**/ENV/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+
+# Logs and temporary files
+**/*.log
+**/logs/
+**/*.tmp
+**/*~
+**/*.swp
+**/*.swo
+**/backup*
+**/*.bak
+**/*.backup
+
+# IDE and editor files
+**/.idea/
+**/.vscode/
+**/*.sublime-project
+**/*.sublime-workspace
+**/.project
+**/.classpath
+**/.settings/
+**/*.code-workspace
+
+# OS generated files
+**/.DS_Store
+**/.DS_Store?
+**/._*
+**/.Spotlight-V100
+**/.Trashes
+**/ehthumbs.db
+**/Thumbs.db
+
+# Exception for utility scripts
+!**/utility-scripts/
+!**/utility-scripts/*.sh
+!**/utility-scripts/*.ps1 

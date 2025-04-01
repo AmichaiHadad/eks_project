@@ -1,3 +1,59 @@
+# Create IAM role for VPC CNI with IRSA
+resource "aws_iam_role" "vpc_cni_role" {
+  name = "${var.cluster_name}-vpc-cni-role"
+  
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(data.aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")}"
+        },
+        Action = "sts:AssumeRoleWithWebIdentity",
+        Condition = {
+          StringEquals = {
+            "${replace(data.aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")}:sub": "system:serviceaccount:kube-system:aws-node",
+            "${replace(data.aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")}:aud": "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Attach CNI policy to the role
+resource "aws_iam_role_policy_attachment" "vpc_cni_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.vpc_cni_role.name
+}
+
+# Get current AWS account ID
+data "aws_caller_identity" "current" {}
+
+# Get EKS cluster info for OIDC provider URL
+data "aws_eks_cluster" "this" {
+  name = var.cluster_name
+}
+
+# Annotate service account for VPC CNI
+resource "kubernetes_annotations" "aws_node_sa" {
+  count = var.enable_vpc_cni ? 1 : 0
+  
+  api_version = "v1"
+  kind        = "ServiceAccount"
+  metadata {
+    name      = "aws-node"
+    namespace = "kube-system"
+  }
+  annotations = {
+    "eks.amazonaws.com/role-arn" = aws_iam_role.vpc_cni_role.arn
+  }
+  
+  # Only apply this after the VPC CNI is installed
+  depends_on = [aws_eks_addon.vpc_cni]
+}
+
 # VPC CNI needs to be deployed first to provide networking for other addons
 resource "aws_eks_addon" "vpc_cni" {
   count = var.enable_vpc_cni ? 1 : 0
@@ -7,6 +63,9 @@ resource "aws_eks_addon" "vpc_cni" {
   
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+  
+  # Reference the IAM role for the service account
+  service_account_role_arn = aws_iam_role.vpc_cni_role.arn
   
   # Simplified configuration with minimal settings to ensure compatibility
   configuration_values = jsonencode({
@@ -32,6 +91,7 @@ resource "aws_eks_addon" "vpc_cni" {
       }
     },
     tolerations = [
+      # Original tolerations
       {
         key = "dedicated"
         value = "monitoring"
@@ -41,6 +101,21 @@ resource "aws_eks_addon" "vpc_cni" {
         key = "dedicated"
         value = "management"
         effect = "NoSchedule"
+      },
+      # Add tolerations for service and data nodes
+      {
+        key = "dedicated"
+        value = "services"
+        effect = "NoSchedule"
+      },
+      {
+        key = "dedicated"
+        value = "data"
+        effect = "NoSchedule"
+      },
+      # Catch-all toleration to run on any tainted node
+      {
+        operator = "Exists"
       }
     ]
   })
