@@ -2,10 +2,6 @@ data "aws_eks_cluster" "cluster" {
   name = var.cluster_name
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.cluster_name
-}
-
 # Check if the argocd namespace already exists
 data "kubernetes_namespace" "argocd" {
   count = var.create_namespace ? 0 : 1
@@ -36,13 +32,17 @@ resource "helm_release" "argocd" {
   version          = var.argocd_helm_chart_version
   namespace        = local.namespace
   create_namespace = true
-  timeout          = 1800
-  atomic           = true
-  cleanup_on_fail  = true
+  timeout          = 3600  # Increase timeout to 1 hour
+  atomic           = false # Set to false to prevent rollback on failure
+  cleanup_on_fail  = false # Don't try to clean up on failure
   wait             = true
   wait_for_jobs    = true
-  recreate_pods    = true
+  recreate_pods    = false # Don't recreate pods, which can cause issues
   max_history      = 3
+  
+  # Force replacement to apply updated values
+  force_update     = true
+  replace          = true
 
   values = [
     templatefile("${path.module}/values.yaml", {
@@ -97,11 +97,9 @@ resource "kubernetes_service" "argocd_server_lb" {
     name      = "argocd-server-lb"
     namespace = local.namespace
     annotations = {
-      "service.beta.kubernetes.io/aws-load-balancer-type" = "nlb"
-      "service.beta.kubernetes.io/aws-load-balancer-internal" = "false"
-      "service.beta.kubernetes.io/aws-load-balancer-ssl-cert" = "" # Add your ACM cert ARN here if needed
-      "service.beta.kubernetes.io/aws-load-balancer-backend-protocol" = "http"
-      "service.beta.kubernetes.io/aws-load-balancer-ssl-ports" = "https"
+      "service.beta.kubernetes.io/aws-load-balancer-backend-protocol"    = "http"
+      "service.beta.kubernetes.io/aws-load-balancer-ssl-ports"           = "443"
+      "service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy" = "ELBSecurityPolicy-TLS-1-2-2017-01"
     }
   }
   spec {
@@ -109,14 +107,14 @@ resource "kubernetes_service" "argocd_server_lb" {
       "app.kubernetes.io/name" = "argocd-server"
     }
     port {
+      name        = "http"
       port        = 80
       target_port = 8080
-      name        = "http"
     }
     port {
+      name        = "https"
       port        = 443
       target_port = 8080
-      name        = "https"
     }
     type = "LoadBalancer"
   }
@@ -124,4 +122,5 @@ resource "kubernetes_service" "argocd_server_lb" {
     helm_release.argocd
   ]
 } 
+
 

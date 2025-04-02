@@ -1,0 +1,17 @@
+{
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "argocd.blizzard.co.il",
+        "Type": "CNAME",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "a2298d427346946b2932d37513db81ed-1995630302.us-east-1.elb.amazonaws.com"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -27,4 +27,10 @@ variable "bcrypt_hash_function" {
   description = "Function to generate bcrypt hash"
   type        = string
   default     = "bcrypt"
+}
+
+variable "acm_cert_arn" {
+  description = "ARN of ACM certificate for ArgoCD HTTPS"
+  type        = string
+  default     = ""
 } 

@@ -10,20 +10,24 @@ global:
 # Server configurations
 server:
   extraArgs:
-    - --insecure # Disable strict TLS verification (remove in production)
+    - --insecure # Disable strict TLS verification for git repos (not server security)
   
-  # Use affinity instead of strict nodeSelector
+  # TLS configuration will be managed by our deployment script instead
+  # to avoid duplicate mount paths
+  
+  # Optional node selection - if nodes with these labels exist
   affinity:
     nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
           - key: role
             operator: In
             values:
             - management
   
-  # Add multiple tolerations for flexibility
+  # Make tolerations more flexible
   tolerations:
     - key: "dedicated"
       operator: "Equal"
@@ -33,7 +37,7 @@ server:
       operator: "Exists"
       effect: "NoSchedule"
 
-  # Use the custom admin password secret
+  # Use the custom admin password secret - this is now using base64 encoding
   admin:
     enabled: true
     passwordSecret:
@@ -41,65 +45,44 @@ server:
       key: password
     createSecret: false
 
-  # Reduce resource requirements
+  # Configure the server's resources
   resources:
     limits:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 300m
+      memory: 512Mi
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 128Mi
 
-  # RBAC configuration
+  # Optional RBAC configuration for users
   rbacConfig:
     policy.csv: |
+      # Basic RBAC policy
       g, admin, role:admin
       g, reader, role:readonly
+
+      # Add custom roles as needed
       g, deployer, role:deployer
+
+    # Define a custom role with specific permissions
     policy.default: role:readonly
     scopes: "[groups, preferred_username]"
 
-# Repository server configuration
+# Configure repository server
 repoServer:
+  # Optional node selection - if nodes with these labels exist
   affinity:
     nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
           - key: role
             operator: In
             values:
             - management
   
-  tolerations:
-    - key: "dedicated"
-      operator: "Equal"
-      value: "management"
-      effect: "NoSchedule"
-    - key: "dedicated"
-      operator: "Exists"
-      effect: "NoSchedule"
-
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 128Mi
-
-# Application controller configuration
-controller:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: role
-            operator: In
-            values:
-            - management
-  
+  # Make tolerations more flexible
   tolerations:
     - key: "dedicated"
       operator: "Equal"
@@ -117,18 +100,53 @@ controller:
       cpu: 100m
       memory: 128Mi
 
-# Redis configuration
+# Configure application controller
+controller:
+  # Optional node selection - if nodes with these labels exist
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: role
+            operator: In
+            values:
+            - management
+  
+  # Make tolerations more flexible
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "management"
+      effect: "NoSchedule"
+    - key: "dedicated"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Configure Redis for caching
 redis:
+  # Optional node selection - if nodes with these labels exist
   affinity:
     nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
           - key: role
             operator: In
             values:
             - management
   
+  # Make tolerations more flexible
   tolerations:
     - key: "dedicated"
       operator: "Equal"
@@ -140,24 +158,27 @@ redis:
 
   resources:
     limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
       cpu: 100m
       memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
 
-# Application set controller configuration
+# Configure applicationset controller
 applicationSet:
+  # Optional node selection - if nodes with these labels exist
   affinity:
     nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
           - key: role
             operator: In
             values:
             - management
   
+  # Make tolerations more flexible
   tolerations:
     - key: "dedicated"
       operator: "Equal"
@@ -166,28 +187,22 @@ applicationSet:
     - key: "dedicated"
       operator: "Exists"
       effect: "NoSchedule"
-  
-  # Reduce resource requirements to prevent timeout issues
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
 
-# Dex server configuration
+# Configure dex server
 dex:
+  # Optional node selection - if nodes with these labels exist
   affinity:
     nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
           - key: role
             operator: In
             values:
             - management
   
+  # Make tolerations more flexible
   tolerations:
     - key: "dedicated"
       operator: "Equal"
@@ -196,17 +211,8 @@ dex:
     - key: "dedicated"
       operator: "Exists"
       effect: "NoSchedule"
-  
-  # Reduce resource requirements
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
 
-# Initial repository configuration
+# Configure initial repositories
 configs:
   repositories:
     # Add your Git repositories here
@@ -214,8 +220,21 @@ configs:
       url: https://github.com/example/private-repo.git
       type: git
 
-# Resource customizations
+  # Configure SSO credentials if needed
+  # dex.config: |
+  #   connectors:
+  #     - type: github
+  #       id: github
+  #       name: GitHub
+  #       config:
+  #         clientID: <your-client-id>
+  #         clientSecret: <your-client-secret>
+  #         orgs:
+  #           - name: your-org-name
+
+# Configure resource customizations
 resourceCustomizations:
+  # Add custom health checks or resource handling
   health.lua: |
     health_status = {}
     if obj.status ~= nil then
@@ -232,3 +251,14 @@ resourceCustomizations:
     health_status.status = "Progressing"
     health_status.message = "Waiting for resource to become Ready"
     return health_status
+
+
+
+
+
+
+
+
+
+
+

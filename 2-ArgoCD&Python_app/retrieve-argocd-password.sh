@@ -1,5 +1,18 @@
 #!/bin/bash
-# Script to retrieve the Argo CD admin password and server URL
+# Securely retrieves and displays ArgoCD admin credentials
+#
+# - Gets credentials from Terraform outputs
+# - Creates protected credential file
+# - Sets file permissions
+# - Shows login instructions
+#
+# Prerequisites:
+# - Terragrunt initialized
+# - Bash 4.2+
+# - Linux/Unix filesystem
+#
+# Usage:
+# ./retrieve-argocd-password.sh
 
 set -e
 

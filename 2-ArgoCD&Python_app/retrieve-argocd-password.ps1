@@ -38,4 +38,23 @@ Write-Host "To login using the CLI:"
 Write-Host "argocd login $ARGOCD_SERVER_URL --username admin --password '$ARGOCD_PASSWORD' --insecure"
 Write-Host ""
 Write-Host "After logging in, you should change the default password using:"
-Write-Host "argocd account update-password" 
+Write-Host "argocd account update-password"
+
+<#
+.SYNOPSIS
+Securely retrieves and displays ArgoCD admin credentials
+
+.DESCRIPTION
+- Gets credentials from Terraform outputs
+- Creates encrypted credential file
+- Sets file permissions
+- Shows login instructions
+
+.PREREQUISITES
+- Terragrunt initialized
+- PowerShell 7+
+- Windows filesystem
+
+.USAGE
+.\retrieve-argocd-password.ps1
+#> 

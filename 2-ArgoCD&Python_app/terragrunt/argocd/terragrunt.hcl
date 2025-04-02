@@ -20,4 +20,7 @@ inputs = {
   
   # Region to use
   region = "us-east-1"
+
+  # ACM Certificate ARN
+  acm_cert_arn = ""
 } 
